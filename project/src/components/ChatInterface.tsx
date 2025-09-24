@@ -131,8 +131,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onDataRequest }) =
     // Voice input functionality would be implemented here
   };
 
+  // Dynamic height state for textarea
+  const [textareaRows, setTextareaRows] = useState(1);
+
+  // Handler to auto-resize textarea
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputMessage(e.target.value);
+    const lineBreaks = e.target.value.split('\n').length;
+    const rows = Math.min(8, Math.max(1, lineBreaks + Math.floor(e.target.value.length / 60)));
+    setTextareaRows(rows);
+  };
+
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl shadow-2xl">
+  <div className="flex flex-col h-[100vh] min-h-0 max-h-[100vh] bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl shadow-2xl transition-all duration-300 overflow-hidden">
       {/* Chat Header */}
       <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6 rounded-t-2xl">
         <div className="flex items-center gap-3">
@@ -146,8 +157,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onDataRequest }) =
         </div>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+  {/* Messages Area */}
+  <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0 max-h-full">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -202,18 +213,47 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onDataRequest }) =
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <div className="p-6 bg-white border-t border-blue-100">
+      {/* Hints for users */}
+      <div className="px-6 pt-4 pb-0 bg-white border-t border-blue-100">
+        <div className="mb-3">
+          <div className="text-xs text-blue-700 font-semibold mb-1">Try asking about:</div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: '🌊 Ocean Heat Wave Alert', question: 'Is there an ocean heat wave alert in the current ARGO data?' },
+              { label: '🧂 Salinity Anomaly', question: 'Are there any recent salinity anomalies detected in the ocean?' },
+              { label: '📈 Deep Water Formation', question: 'What are the latest observations on deep water formation?' },
+              { label: '🪸 Corals Bleaching', question: 'Is there any coral bleaching event detected in the ocean data?' },
+              { label: '🚢 Ocean Currents for Ships/Navigation', question: 'How can ocean currents help ships find the best sea route right now?' },
+              { label: '🌊 Ocean Waves', question: 'What is the current ocean wave activity in the North Pacific?' },
+              { label: '📜 Policy Making (Wildlife, Environment)', question: 'How can ocean data support policy making for wildlife and the environment?' },
+              { label: '🐟 Studying Biolife & Danger Alerts', question: 'What does the data say about marine biolife, fisheries, and danger alerts under the ocean?' },
+              { label: '🌊 Tsunami Alert', question: 'Is there any tsunami alert or warning in the latest ocean data?' },
+            ].map((hint, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className="inline-flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                onClick={() => {
+                  setInputMessage(hint.question);
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+              >
+                {hint.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex items-end gap-3">
           <div className="flex-1 relative">
             <textarea
               ref={textareaRef}
               value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
+              onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               placeholder="Ask about ocean data, ARGO floats, temperature, salinity..."
               className="w-full p-4 pr-12 border-2 border-blue-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 resize-none transition-all duration-200 bg-blue-50/50"
-              rows={1}
+              rows={textareaRows}
+              style={{ minHeight: '44px', maxHeight: '160px', overflowY: 'auto' }}
               disabled={isLoading}
             />
             <button
@@ -235,7 +275,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onDataRequest }) =
             <Send className="w-5 h-5" />
           </button>
         </div>
-      </div>
+  </div>
     </div>
   );
 };
