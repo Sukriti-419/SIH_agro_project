@@ -20,7 +20,7 @@ interface ResponsiveDashboardProps {
 }
 
 export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({ currentQuery }) => {
-  const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
+  const [selectedTimeRange, setSelectedTimeRange] = useState('1h');
   const [selectedRegion, setSelectedRegion] = useState('global');
   const [chartType, setChartType] = useState('line');
 
@@ -91,6 +91,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({ curren
               onChange={(e) => setSelectedTimeRange(e.target.value)}
               className="px-3 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100"
             >
+              <option value="1h">Last 1 Hour</option>
               <option value="1d">Last 24 Hours</option>
               <option value="7d">Last 7 Days</option>
               <option value="30d">Last 30 Days</option>
