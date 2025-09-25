@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Mic, MicOff, Bot, User, Waves as Wave } from 'lucide-react';
+import { Send, Mic, MicOff, Bot, User } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -25,16 +25,63 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onDataRequest }) =
   const [inputMessage, setInputMessage] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [listeningText, setListeningText] = useState('Listening...');
+  const [textareaRows, setTextareaRows] = useState(1);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // @ts-ignore
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognitionRef = useRef<any>(null);
 
+  // Animate listening dots
   useEffect(() => {
-    scrollToBottom();
+    let interval: NodeJS.Timeout;
+    if (isListening) {
+      let dots = 0;
+      interval = setInterval(() => {
+        dots = (dots + 1) % 4;
+        setListeningText('Listening' + '.'.repeat(dots));
+      }, 500);
+    } else {
+      setListeningText('Listening...');
+    }
+    return () => clearInterval(interval);
+  }, [isListening]);
+
+  // Scroll to bottom on new message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const toggleVoiceInput = () => {
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in this browser.');
+      return;
+    }
+    if (!isListening) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => setIsListening(true);
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInputMessage(transcript);
+        setIsListening(false);
+      };
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
+
+      recognition.start();
+      recognitionRef.current = recognition;
+    } else {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -82,7 +129,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onDataRequest }) =
         onDataRequest(userMessage.content);
       }
     } catch (error) {
-      console.error('Error sending message:', error);
       setMessages(prev => prev.filter(msg => msg.id !== 'typing'));
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -98,7 +144,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onDataRequest }) =
 
   const generateBotResponse = (query: string): string => {
     const lowerQuery = query.toLowerCase();
-    
     if (lowerQuery.includes('temperature') || lowerQuery.includes('temp')) {
       return "I found temperature data for your query. The ARGO floats show interesting thermal patterns in this region. Temperature profiles indicate seasonal variations with surface warming and deeper thermoclines. I'm generating visualizations for you on the dashboard.";
     } else if (lowerQuery.includes('salinity')) {
@@ -126,15 +171,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onDataRequest }) =
     }
   };
 
-  const toggleVoiceInput = () => {
-    setIsListening(!isListening);
-    // Voice input functionality would be implemented here
-  };
-
-  // Dynamic height state for textarea
-  const [textareaRows, setTextareaRows] = useState(1);
-
-  // Handler to auto-resize textarea
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
     const lineBreaks = e.target.value.split('\n').length;
@@ -143,7 +179,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onDataRequest }) =
   };
 
   return (
-  <div className="flex flex-col h-[100vh] min-h-0 max-h-[100vh] bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl shadow-2xl transition-all duration-300 overflow-hidden">
+    <div className="flex flex-col h-[100vh] min-h-0 max-h-[100vh] bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl shadow-2xl transition-all duration-300 overflow-hidden">
       {/* Chat Header */}
       <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6 rounded-t-2xl">
         <div className="flex items-center gap-3">
@@ -157,8 +193,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onDataRequest }) =
         </div>
       </div>
 
-  {/* Messages Area */}
-  <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0 max-h-full">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0 max-h-full">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -263,19 +299,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onDataRequest }) =
                   ? 'bg-red-500 text-white shadow-lg' 
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
               }`}
+              type="button"
             >
               {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </button>
+            {isListening && (
+              <div className="absolute left-3 bottom-2 flex items-center gap-2 animate-pulse">
+                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                <span className="text-xs text-red-500 font-semibold">{listeningText}</span>
+              </div>
+            )}
           </div>
           <button
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || isLoading}
             className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white p-4 rounded-2xl hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+            type="button"
           >
             <Send className="w-5 h-5" />
           </button>
         </div>
-  </div>
+      </div>
     </div>
   );
 };

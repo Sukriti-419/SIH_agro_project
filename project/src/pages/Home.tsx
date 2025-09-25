@@ -1,11 +1,14 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ChatInterface } from '../components/ChatInterface';
 import { ResponsiveDashboard } from '../components/ResponsiveDashboard';
 import { ArrowRight, Play, Users, Database, Zap } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export const Home: React.FC = () => {
   const [currentQuery, setCurrentQuery] = React.useState<string>('');
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleDataRequest = (query: string) => {
     setCurrentQuery(query);
@@ -50,13 +53,19 @@ export const Home: React.FC = () => {
               and get instant insights from global ARGO float data.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/dashboard"
+              <button
                 className="inline-flex items-center gap-2 bg-white text-blue-600 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-blue-50 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105"
+                onClick={() => {
+                  if (user) {
+                    navigate('/dashboard');
+                  } else {
+                    navigate('/register');
+                  }
+                }}
               >
                 <Play className="w-5 h-5" />
                 Start Exploring
-              </Link>
+              </button>
               <Link
                 to="/walkthrough"
                 className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-white/30 transition-all duration-200 border border-white/30"
@@ -85,35 +94,37 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Interactive Demo Section */}
-      <section className="py-16 lg:py-24">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-800 mb-4">
-              Try FloatChat Now
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Experience the power of conversational ocean data exploration. 
-              Ask questions and see real-time visualizations.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            {/* Chat Interface */}
-            <div className="order-2 xl:order-1">
-              <ChatInterface onDataRequest={handleDataRequest} />
+      {/* Interactive Demo Section - Only for logged in users */}
+      {user && (
+        <section className="py-16 lg:py-24">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl lg:text-4xl font-bold text-gray-800 mb-4">
+                Try FloatChat Now
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Experience the power of conversational ocean data exploration. 
+                Ask questions and see real-time visualizations.
+              </p>
             </div>
-            
-            {/* Dashboard Preview */}
-            <div className="order-1 xl:order-2">
-              <div className="bg-white rounded-2xl shadow-2xl p-6 border border-blue-100">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Live Ocean Dashboard</h3>
-                <ResponsiveDashboard currentQuery={currentQuery} />
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              {/* Chat Interface */}
+              <div className="order-2 xl:order-1">
+                <ChatInterface onDataRequest={handleDataRequest} />
+              </div>
+              
+              {/* Dashboard Preview */}
+              <div className="order-1 xl:order-2">
+                <div className="bg-white rounded-2xl shadow-2xl p-6 border border-blue-100">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Live Ocean Dashboard</h3>
+                  <ResponsiveDashboard currentQuery={currentQuery} />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Stats Section */}
       <section className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-16">
@@ -141,3 +152,5 @@ export const Home: React.FC = () => {
     </div>
   );
 };
+
+export default Home;

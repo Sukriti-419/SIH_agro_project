@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
 import { 
   Home, 
   BarChart3, 
@@ -17,16 +19,23 @@ import {
 export const Navigation: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
 
-  const navItems = [
-    { path: '/', label: 'Home', icon: Home },
-    { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-    { path: '/explorer', label: 'Data Explorer', icon: Map },
-    { path: '/datasets', label: 'Datasets', icon: Database },
-    { path: '/walkthrough', label: 'Walkthrough', icon: Activity },
-    { path: '/about', label: 'About', icon: Info },
-    { path: '/settings', label: 'Settings', icon: Settings },
-  ];
+  // Only show Home and Walkthrough if not logged in
+  const navItems = user
+    ? [
+        { path: '/', label: 'Home', icon: Home },
+        { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+        { path: '/explorer', label: 'Data Explorer', icon: Map },
+        { path: '/datasets', label: 'Datasets', icon: Database },
+        { path: '/walkthrough', label: 'Walkthrough', icon: Activity },
+        { path: '/about', label: 'About', icon: Info },
+        { path: '/settings', label: 'Settings', icon: Settings },
+      ]
+    : [
+        { path: '/', label: 'Home', icon: Home },
+        { path: '/walkthrough', label: 'Walkthrough', icon: Activity },
+      ];
 
   const isActive = (path: string) => location.pathname === path;
 
